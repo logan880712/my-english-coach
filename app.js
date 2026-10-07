@@ -1,36 +1,15 @@
 'use strict';
-const lessons = {
-  '일상생활': [
-    ['What do you do in the morning?', '아침에 무엇을 하나요?', 'I drink coffee in the morning.', '“I drink coffee”처럼 주어(I) 다음에 동작(drink)을 써 보세요. 습관을 말할 때는 현재형을 사용해요.', 'in the morning은 “아침에”라는 뜻이에요. 커피 대신 tea(차), water(물)를 넣어도 좋아요.'],
-    ['What do you like to do on weekends?', '주말에 무엇을 하는 것을 좋아하나요?', 'I like to go for a walk on weekends.', '“I like to + 동사” 순서인지 확인해 보세요. like 뒤에 동사를 바로 붙이기보다 to를 함께 쓰면 좋아요.', 'go for a walk는 “산책하다”예요. I like to read books처럼 좋아하는 활동을 바꿀 수 있어요.']
-  ],
-  '여행': [
-    ['Where would you like to travel?', '어디로 여행을 가고 싶나요?', 'I would like to travel to Japan.', '목적지를 말할 때 travel 뒤에 to가 있는지 살펴보세요.', 'would like to는 “~하고 싶어요”라는 부드러운 표현이에요. Japan 대신 가고 싶은 나라를 넣어 보세요.'],
-    ['How do you get to the airport?', '공항까지 어떻게 가나요?', 'I go to the airport by bus.', '교통수단은 by bus처럼 말해요. by a bus가 아니라 by bus예요.', 'go to는 “~에 가다”, by bus는 “버스로”예요. by train(기차로), by taxi(택시로)도 사용할 수 있어요.']
-  ],
-  '식당': [
-    ['What would you like to order?', '무엇을 주문하고 싶나요?', 'I would like a chicken salad, please.', '음식을 정중하게 요청하려면 “I would like …, please.” 형태를 참고하세요.', 'I would like 뒤에 음식 이름을 넣으면 “~을 주세요”가 돼요. 한 접시의 샐러드는 a salad라고 할 수 있어요.'],
-    ['What would you like to drink?', '무엇을 마시고 싶나요?', 'I would like some water, please.', 'water는 보통 개수를 세지 않으므로 a water 대신 some water를 써 보세요.', 'some water는 “물 좀”이라는 뜻이에요. a glass of water라고 하면 “물 한 잔”이에요.']
-  ],
-  '쇼핑': [
-    ['What are you looking for?', '무엇을 찾고 있나요?', 'I am looking for a blue shirt.', 'look for는 “찾다”예요. for가 빠지지 않았는지 확인해 보세요.', 'I am looking for는 “~을 찾고 있어요”예요. a blue shirt는 “파란 셔츠 한 벌”이에요.'],
-    ['What size do you need?', '어떤 사이즈가 필요하나요?', 'I need a medium, please.', '“I need + 필요한 것” 순서를 참고하세요.', 'a medium은 옷을 고르는 상황에서 “중간 사이즈 한 벌”이라는 뜻이에요. small이나 large로 바꿀 수 있어요.']
-  ],
-  '직장': [
-    ['What do you do?', '어떤 일을 하나요?', 'I am an office worker.', '직업을 말할 때 “I am + a/an + 직업”을 사용해요. am이나 관사가 빠졌는지 살펴보세요.', 'office는 모음 소리로 시작하므로 an을 써요. I am a teacher는 “저는 교사예요”라는 뜻이에요.'],
-    ['What time do you start work?', '몇 시에 일을 시작하나요?', 'I start work at nine.', '시각 앞에는 at을 써요. in nine보다 at nine이 자연스러워요.', 'start work는 “일을 시작하다”예요. at nine은 “9시에”라는 뜻이고 at ten처럼 시간을 바꿀 수 있어요.']
-  ]
-};
+const lessons = Object.fromEntries(Object.entries(courseLessons).map(([topic, entries]) => [topic, entries.map(q => [q[0], q[1], q[2], '예문과 비교해 주어와 동사의 순서, 빠진 단어가 있는지 살펴보세요. 다른 답변도 가능해요.', `${q[2]}는 “${q[3]}”라는 뜻이에요. 한 덩어리로 익힌 뒤 내 상황에 맞게 이름·장소·시간 등을 바꿔 말해 보세요.`]) ]));
 const $ = id => document.getElementById(id);
 const storageKey = 'my-english-coach.reviews.v1';
 let topic = '일상생활', index = 0, currentAnswer = '', records = [], storageReadable = true;
 try { const value = JSON.parse(localStorage.getItem(storageKey) || '[]'); if (!Array.isArray(value)) throw new Error(); records = value.filter(r => r && typeof r.id === 'string' && ['topic','question','answer','suggestion','explanation'].every(k => typeof r[k] === 'string')); } catch { storageReadable = false; }
-function show(page) { stopSpeech(); for (const id of ['home','practice','review']) $(id).hidden = id !== page; window.scrollTo({top:0}); }
+function show(page) { stopSpeech(); for (const id of ['home','practice','review','daily-complete']) $(id).hidden = id !== page; window.scrollTo({top:0}); }
 function question() { return lessons[topic][index]; }
 function renderQuestion() { stopSpeech(); const q = question(); $('beginner-help').open = false; $('starter-example').textContent = q[2]; $('starter-meaning').textContent = meanings[q[2]] || q[4]; $('topic-label').textContent = topic + ' · 초급'; $('question').textContent = q[0]; $('translation').textContent = q[1]; $('progress').textContent = `${index + 1} / ${lessons[topic].length} 질문`; $('answer').value = ''; currentAnswer = ''; $('feedback').hidden = true; for (const b of $('categories').children) b.setAttribute('aria-pressed', String(b.textContent === topic)); }
-function begin() { show('practice'); renderQuestion(); }
+function begin() { dailyMode = false; $('daily-guide').hidden = true; $('categories').hidden = false; $('next').hidden = false; show('practice'); renderQuestion(); }
 for (const name of Object.keys(lessons)) { const b = document.createElement('button'); b.textContent = name; b.type = 'button'; b.onclick = () => { topic = name; index = 0; renderQuestion(); }; $('categories').append(b); }
-$('start').onclick = begin; $('practice-menu').onclick = begin; $('back-practice').onclick = begin;
+$('start').onclick = startDaily; $('practice-menu').onclick = begin; $('back-practice').onclick = begin;
 $('home-link').onclick = e => { e.preventDefault(); show('home'); };
 $('answer-form').onsubmit = e => { e.preventDefault(); const answer = $('answer').value.trim(); if (!answer) { $('answer').setCustomValidity('영어 답변을 한 문장 입력해 주세요.'); $('answer').reportValidity(); return; } currentAnswer = answer; const q = question(); $('original').textContent = answer; $('suggestion').textContent = q[2]; const same = answer.toLowerCase().replace(/[.!?]/g,'').trim() === q[2].toLowerCase().replace(/[.!?]/g,'').trim(); $('issue').textContent = same ? '준비된 예문과 같은 표현을 사용했어요! 아래 설명으로 표현을 익혀 보세요.' : '샘플 점검 안내: ' + q[3] + ' 이 안내는 입력한 문장의 오류를 자동으로 판별한 결과가 아니에요.'; $('explanation').textContent = q[4]; $('save-status').textContent = ''; $('save').disabled = false; $('save').textContent = '복습에 저장'; $('feedback').hidden = false; $('feedback').scrollIntoView({behavior:'smooth',block:'start'}); };
 $('answer').oninput = () => { $('answer').setCustomValidity(''); if (currentAnswer) { $('feedback').hidden = true; currentAnswer = ''; } };
@@ -42,18 +21,7 @@ function textElement(tag, text) { const el = document.createElement(tag); el.tex
 function renderReviews() { const list = $('review-list'); list.replaceChildren(); if (!records.length) { const empty = textElement('p',storageReadable ? '아직 저장된 문장이 없어요. 회화 연습에서 “복습에 저장”을 눌러 보세요.' : '저장된 기록을 읽을 수 없어요. 브라우저 저장 설정을 확인해 주세요.'); empty.className = 'empty'; list.append(empty); } for (const r of [...records].reverse()) { const card = document.createElement('article'); card.className = 'card review-card'; card.append(textElement('span',r.topic),textElement('h2',r.question),textElement('h3','내 문장'),textElement('p',r.answer),textElement('h3','추천 예문'),textElement('p',r.suggestion),textElement('h3','표현 설명'),textElement('p',r.explanation)); const remove = textElement('button','복습에서 삭제'); remove.className = 'delete'; remove.onclick = () => { if (persist(records.filter(item => item.id !== r.id))) renderReviews(); else { remove.textContent = '삭제하지 못했어요. 저장 설정을 확인해 주세요.'; } }; card.append(remove); list.append(card); } }
 $('review-menu').onclick = () => { renderReviews(); show('review'); }; updateCount();
 
-const meanings = {
-'I drink coffee in the morning.':'저는 아침에 커피를 마셔요.',
-'I like to go for a walk on weekends.':'저는 주말에 산책하는 것을 좋아해요.',
-'I would like to travel to Japan.':'저는 일본으로 여행 가고 싶어요.',
-'I go to the airport by bus.':'저는 버스로 공항에 가요.',
-'I would like a chicken salad, please.':'치킨 샐러드 하나 주세요.',
-'I would like some water, please.':'물 좀 주세요.',
-'I am looking for a blue shirt.':'파란 셔츠를 찾고 있어요.',
-'I need a medium, please.':'중간 사이즈로 주세요.',
-'I am an office worker.':'저는 회사원이에요.',
-'I start work at nine.':'저는 9시에 일을 시작해요.'
-};
+const meanings = Object.fromEntries(Object.values(courseLessons).flat().map(q => [q[2],q[3]]));
 let recognition = null;
 function stopSpeech() {
   if ('speechSynthesis' in window) speechSynthesis.cancel();
@@ -84,4 +52,72 @@ $('speak-answer').onclick = () => {
   try { session.start(); $('speak-answer').disabled = true; $('stop-recording').hidden = false; $('mic-status').textContent = '듣고 있어요. 영어로 짧게 말해 주세요.'; } catch { stopSpeech(); $('mic-status').textContent = '마이크를 시작하지 못했어요. 직접 입력해 주세요.'; }
 };
 $('stop-recording').onclick = () => { if (recognition) recognition.stop(); };
-renderQuestion();
+
+// Six expressions per day; increasing recall and conversation tasks over 180 days.
+const dailyKey = 'my-english-coach.daily.v2';
+const courseKey = 'my-english-coach.course.v1';
+const stepIds = ['step-listen','step-repeat','step-recall','step-apply'];
+const allItems = Object.entries(lessons).flatMap(([topic, entries]) => entries.map((q,index) => ({topic,index,id:`${topic}:${index}`})));
+const phases = [
+ ['1개월 · 소리에 익숙해지기','예문의 단어 하나를 내 상황에 맞게 바꿔 3번 말해 봤어요.'],
+ ['2개월 · 내 이야기 말하기','예문을 내 이야기로 바꾸고, 질문에 보지 않고 답해 봤어요.'],
+ ['3개월 · 묻고 답하기','질문과 내 답변을 번갈아 말해 2차례 주고받는 연습을 했어요.'],
+ ['4개월 · 대화 이어가기','질문에 답한 뒤 관련 문장 하나를 더 붙여 말해 봤어요.'],
+ ['5개월 · 상황 속에서 말하기','그 상황을 상상해 질문과 답변을 연결하고, 다시 말해 달라는 표현도 써 봤어요.'],
+ ['6개월 · 도움 없이 소통하기','예문을 가리고 30초 동안 상황에 맞게 말해 본 뒤 막힌 표현을 다시 연습했어요.']
+];
+let dailyMode = false, dailyState, dailyPlan, dailyCanSave = true, dailyWarning = '', courseStart = null, courseDay = 0;
+function localDate() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function refreshDaily() {
+ const date = localDate(); if (dailyState && dailyState.date === date) return; dailyWarning = ''; dailyCanSave = true;
+ try { courseStart = localStorage.getItem(courseKey); if (courseStart && !/^\d{4}-\d{2}-\d{2}$/.test(courseStart)) throw new Error(); }
+ catch { courseStart = null; dailyCanSave = false; dailyWarning = '브라우저 저장 공간을 사용할 수 없어요. 지금 연습은 가능하지만 진도가 유지되지 않을 수 있어요.'; }
+ courseDay = courseStart ? Math.max(0, Math.floor((Date.parse(date+'T00:00:00Z')-Date.parse(courseStart+'T00:00:00Z'))/86400000)) : 0;
+ // Repetition is intentional: 60 authored expressions recur with harder speaking tasks.
+ const focusStart = (courseDay * 4) % allItems.length;
+ dailyPlan = [0,1,2,3].map(i => ({...allItems[(focusStart+i)%allItems.length],role:'오늘의 핵심 표현'}));
+ const reviewStart = courseDay ? ((courseDay-1)*4)%allItems.length : 4;
+ dailyPlan.push(...[0,1].map(i => ({...allItems[(reviewStart+i)%allItems.length],role:courseDay ? '이전 표현 복습' : '첫날 추가 기초 연습'})));
+ dailyState = {date,completed:[]};
+ try { const raw = localStorage.getItem(dailyKey); if (raw) { const parsed = JSON.parse(raw); if (!parsed || typeof parsed.date !== 'string' || !Array.isArray(parsed.completed) || !parsed.completed.every(id => typeof id === 'string')) throw new Error(); if (parsed.date === date) dailyState.completed = [...new Set(parsed.completed)].filter(id => dailyPlan.some(item => item.id === id)); } }
+ catch { dailyCanSave = false; dailyWarning = '오늘의 진도를 읽을 수 없어요. 연습은 가능하지만 저장 기록은 덮어쓰지 않습니다.'; }
+}
+function updateDailyHome() {
+ $('daily-home').textContent = dailyState.completed.length === 6 ? '오늘 공부 완료! 오늘은 쉬어도 좋아요.' : `오늘의 공부 · ${dailyState.completed.length} / 6표현 완료 · 약 35분`;
+ $('start').firstChild.textContent = dailyState.completed.length === 6 ? '오늘 완료한 공부 보기 ' : dailyState.completed.length ? '오늘 공부 이어하기 ' : '오늘의 영어회화 시작하기 ';
+}
+function startDaily() {
+ refreshDaily();
+ if (!courseStart) { courseStart = localDate(); try { if (!dailyCanSave) throw new Error(); localStorage.setItem(courseKey,courseStart); } catch { dailyWarning = '시작일을 저장하지 못했어요. 다시 열면 학습 단계가 유지되지 않을 수 있어요.'; } }
+ updateDailyHome(); dailyMode = true;
+ if (dailyState.completed.length === 6) { showDailyComplete(); return; }
+ const item = dailyPlan.find(item => !dailyState.completed.includes(item.id)); topic = item.topic; index = item.index;
+ $('daily-guide').hidden = false; $('categories').hidden = true; $('next').hidden = true;
+ show('practice'); renderQuestion(); $('beginner-help').open = true;
+ $('daily-progress').textContent = `오늘의 ${dailyState.completed.length+1}번째 표현 · ${dailyState.completed.length} / 6표현 완료 · ${topic}`;
+ const phase = phases[Math.min(5,Math.floor(courseDay/30))];
+ $('course-phase').textContent = `${Math.min(courseDay+1,180)} / 180일 · ${phase[0]}`;
+ $('daily-role').textContent = item.role;
+ $('apply-task').textContent = phase[1]; $('daily-storage').textContent = dailyWarning;
+ for (const id of stepIds) $(id).checked = false;
+ $('daily-finish').disabled = true; $('daily-finish').textContent = dailyState.completed.length === 5 ? '오늘 공부 마치기' : '이 표현 완료 · 다음 표현으로';
+}
+for (const id of stepIds) $(id).onchange = () => { $('daily-finish').disabled = !stepIds.every(id => $(id).checked); };
+$('daily-finish').onclick = () => {
+ if (!dailyMode || !stepIds.every(id => $(id).checked)) return;
+ if (dailyState.date !== localDate()) { dailyState = null; startDaily(); $('daily-storage').textContent = '날짜가 바뀌어 새 하루의 연습을 시작합니다.'; return; }
+ const id = `${topic}:${index}`; if (!dailyState.completed.includes(id)) dailyState.completed.push(id);
+ try { if (!dailyCanSave) throw new Error(); localStorage.setItem(dailyKey, JSON.stringify(dailyState)); }
+ catch { dailyWarning = '연습은 마쳤지만 진도를 저장하지 못했어요. 다시 열면 완료 표시가 유지되지 않을 수 있어요.'; }
+ updateDailyHome(); if (dailyState.completed.length === 6) showDailyComplete(); else { const warning = dailyWarning; startDaily(); if (warning) {dailyWarning = warning; $('daily-storage').textContent = warning;} }
+};
+function showDailyComplete() {
+ show('daily-complete'); $('completed-sentences').replaceChildren();
+ for (const item of dailyPlan) { const q = lessons[item.topic][item.index]; $('completed-sentences').append(textElement('p',q[2]),textElement('p',meanings[q[2]])); }
+ $('completion-storage').textContent = dailyWarning || '오늘의 완료 기록을 이 브라우저에 저장했어요. 내일 다시 만나요. 완료 표시는 연습 분량을 마쳤다는 뜻이며 실력 인증은 아니에요.';
+ $('complete-title').focus();
+}
+$('daily-home-button').onclick = () => { show('home'); updateDailyHome(); };
+$('extra-practice').onclick = begin;
+window.addEventListener('focus', () => { if (dailyState.date !== localDate()) { dailyState = null; refreshDaily(); updateDailyHome(); if (dailyMode) startDaily(); } });
+refreshDaily(); updateDailyHome(); renderQuestion();
