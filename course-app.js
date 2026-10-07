@@ -13,11 +13,12 @@
  function validate(s) {
   if (!s || s.version!==1 || !Number.isInteger(s.cursor) || s.cursor<0 || s.cursor>180 || !Array.isArray(s.history) || s.history.length!==s.cursor) throw Error('기록 형식이 올바르지 않습니다.');
   const stepValid = v => v && Array.isArray(v.checks) && v.checks.length===3 && v.checks.every(x=>typeof x==='boolean') && typeof v.hard==='boolean' && typeof v.note==='string' && v.note.length<=1000 && (v.quiz===null || v.quiz===0 || v.quiz===1) && (v.assessment===null || choices.includes(v.assessment));
+  const activitiesValid = a => a===undefined||a===null||(Array.isArray(a.shadowing)&&a.shadowing.length<=6&&a.shadowing.every(v=>typeof v==='string')&&typeof a.roleplay==='boolean'&&(a.wordGame===null||Number.isInteger(a.wordGame)&&a.wordGame>=0&&a.wordGame<=5));
   const weeklyValid = w => w===undefined || w===null || (Array.isArray(w.answers)&&w.answers.length===8&&w.answers.every(v=>v===null||Number.isInteger(v)&&v>=0&&v<3)&&Array.isArray(w.notes)&&w.notes.length===3&&w.notes.every(v=>typeof v==='string'&&v.length<=1000)&&typeof w.submitted==='boolean'&&(!w.submitted||w.answers.every(v=>v!==null)));
   const monthlyValid = a => Array.isArray(a) && a.length===10 && a.every(v=>v===null || choices.includes(v));
-  s.history.forEach((h,i)=> {if(!h || h.day!==i+1 || typeof h.completedAt!=='string' || !Number.isFinite(Date.parse(h.completedAt)) || typeof h.date!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(h.date) || !Array.isArray(h.steps) || h.steps.length!==6 || !h.steps.every(stepValid) || !monthlyValid(h.monthly)||!weeklyValid(h.weekly)||(h.vocabDone!==undefined&&typeof h.vocabDone!=='boolean')) throw Error('완료 기록이 올바르지 않습니다.');});
+  s.history.forEach((h,i)=> {if(!h || h.day!==i+1 || typeof h.completedAt!=='string' || !Number.isFinite(Date.parse(h.completedAt)) || typeof h.date!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(h.date) || !Array.isArray(h.steps) || h.steps.length!==6 || !h.steps.every(stepValid) || !monthlyValid(h.monthly)||!weeklyValid(h.weekly)||!activitiesValid(h.activities)||(h.vocabDone!==undefined&&typeof h.vocabDone!=='boolean')) throw Error('완료 기록이 올바르지 않습니다.');});
   if(s.cursor===180) {if(s.active!==null) throw Error('완료 상태가 올바르지 않습니다.');}
-  else if(!s.active || s.active.day!==s.cursor+1 || !Number.isInteger(s.active.position) || s.active.position<0 || s.active.position>6 || !Array.isArray(s.active.steps) || s.active.steps.length!==6 || !s.active.steps.every(stepValid) || !monthlyValid(s.active.monthly)||!weeklyValid(s.active.weekly)||(s.active.vocabDone!==undefined&&typeof s.active.vocabDone!=='boolean')) throw Error('진행 기록이 올바르지 않습니다.');
+  else if(!s.active || s.active.day!==s.cursor+1 || !Number.isInteger(s.active.position) || s.active.position<0 || s.active.position>6 || !Array.isArray(s.active.steps) || s.active.steps.length!==6 || !s.active.steps.every(stepValid) || !monthlyValid(s.active.monthly)||!weeklyValid(s.active.weekly)||!activitiesValid(s.active.activities)||(s.active.vocabDone!==undefined&&typeof s.active.vocabDone!=='boolean')) throw Error('진행 기록이 올바르지 않습니다.');
   return s;
  }
  function warn(text) {el('course-warning').textContent=text;el('course-warning').hidden=false;}
@@ -33,7 +34,7 @@
  function text(tag,value,cls) {const n=document.createElement(tag);n.textContent=value;if(cls)n.className=cls;return n;}
  function stopMic() {if(mic){const old=mic;mic=null;old.abort();}el('course-mic').disabled=false;el('course-mic-stop').hidden=true;}
  const previousShow=show;
- show=function(page){stopMic();previousShow(page);};
+ show=function(page){stopMic();previousShow(page);window.dispatchEvent(new CustomEvent('coach-view-change',{detail:{page}}));};
  function audio(value,rate=.85) {
   stopMic();if(!('speechSynthesis' in window)){el('course-status').textContent='이 브라우저는 음성 재생을 지원하지 않아요. 화면의 문장을 읽고 연습해 주세요.';return;}
   speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(value);u.lang='en-US';u.rate=rate;
@@ -50,6 +51,7 @@
   el('home-stage').textContent=state.cursor===180?'6개월 과정의 모든 수업을 마쳤어요':`${Math.floor((d.day-1)/30)+1}개월차 · ${d.day}일차`;
   el('home-lesson').textContent=state.cursor===180?'앞으로도 대화하며 계속 익혀요':d.title;
   el('home-goal').textContent=state.cursor===180?'학습 기록에서 어려웠던 상황을 다시 연습하고 사람과 대화해 보세요.':course.routines[d.routine].goal;
+  window.dispatchEvent(new CustomEvent('coach-progress'));
   el('start').textContent=state.cursor===180?'전체 과정 완료 기록 보기':todayCompleted()?'오늘 완료한 공부 보기':state.active.position?'오늘 공부 이어하기 →':'오늘 공부 시작하기 →';
  }
  function start(day,asPreview=false){
@@ -81,6 +83,7 @@
  function ready(){const s=currentState();return s.checks.every(Boolean) && (lesson.routine!==2||s.quiz!==null&&quizOptions()[s.quiz]===current().promptKo) && (lesson.routine!==5||s.assessment!==null);}
  function updateNext(){el('course-next').disabled=!ready();}
  function renderStep(){
+  window.dispatchEvent(new CustomEvent('coach-lesson-change'));
   stopMic();if('speechSynthesis' in window)speechSynthesis.cancel();
   el('course-status').textContent='';el('course-mic-status').textContent='음성 인식은 브라우저 서비스에 음성이 전송될 수 있어요. 녹음 파일은 앱에 저장하지 않습니다. 지원되지 않으면 소리 내어 말하기만 해도 됩니다.';
   el('course-progress').textContent=`${working.position} / 6표현 완료`;
@@ -147,7 +150,7 @@
   if(lesson.monthly&&working.monthly.some(v=>v===null))return;
   if(!working.vocabDone){afterExpressions();return;}
   if(lesson.day%7===0&&!working.weekly?.submitted){renderWeekly();return;}
-  const done={vocabDone:true,weekly:lesson.day%7===0?structuredClone(working.weekly):null,day:lesson.day,date:dateKey(),completedAt:new Date().toISOString(),steps:structuredClone(working.steps),monthly:[...working.monthly]};
+  const done={activities:working.activities?structuredClone(working.activities):null,vocabDone:true,weekly:lesson.day%7===0?structuredClone(working.weekly):null,day:lesson.day,date:dateKey(),completedAt:new Date().toISOString(),steps:structuredClone(working.steps),monthly:[...working.monthly]};
   let saved=true;
   if(!preview){if(state.cursor+1!==lesson.day)return;state.history.push(done);state.cursor++;state.active=state.cursor<180?freshActive(state.cursor+1):null;saved=save();}
   updateHome();showCompletion(done,saved);
@@ -159,6 +162,7 @@
   el('completion-message').textContent=preview?'미리보기는 실제 학습 진도를 바꾸지 않습니다.':done.day===180?'꾸준히 연습한 시간을 축하합니다. 이것은 수업 완료이며 회화 실력 인증은 아니에요. 어려웠던 상황은 계속 연습하고 실제 대화로 확인해 보세요.':'오늘은 쉬셔도 됩니다. 내일 또 이어서 연습해요.';
   el('completed-sentences').replaceChildren(text('h2',d.title));d.entries.forEach((item,i)=>{const q=entryFor(item);el('completed-sentences').append(text('p',q.answer),text('p',hangulSound(q.answer),'pronunciation'),text('p',q.answerKo,'hint'));if(done.steps[i].note)el('completed-sentences').append(text('p',`내 메모: ${done.steps[i].note}`));});
   if(d.routine===5)el('completed-sentences').append(text('p',`예문 없이 말하기 자기 점검: ${done.steps.filter(s=>s.assessment==='solo').length} / 6표현. 아직 어려운 표현은 다시 연습해요.`));
+  if(done.activities){el('completed-sentences').append(text('h3','오늘의 말하기 미션'),text('p',`따라 말하기 ${done.activities.shadowing.length}개 표현 · 역할 대화 ${done.activities.roleplay?'연습 완료':'다음에 도전'} · 단어 게임 ${done.activities.wordGame===null?'다음에 도전':done.activities.wordGame+' / 5개 첫 시도 정답'}`));}
   if(done.weekly?.submitted){const questions=weeklyQuestions(done.day);const score=questions.filter((q,i)=>q.options[done.weekly.answers[i]]===q.correct).length;el('completed-sentences').append(text('h3',`주간 단어·문장 테스트: ${score} / 8문제 정답`),text('p','뜻 연결 테스트의 결과예요. 틀린 표현은 학습 기록에서 다시 확인할 수 있어요.'));}
   if(d.monthly){const count=done.monthly.filter(v=>v==='solo').length;el('completed-sentences').append(text('h3',`월별 자기 점검: ${count} / 10상황에서 혼자 소통`),text('p',count>=7?'목표 기준에 가까워졌다고 느끼셨군요. 사람과 실제 대화에서도 확인해 보세요.':'다음 달에도 어려운 상황을 중심으로 연습하세요. 매달 비교하는 것이 중요해요.'));}
   el('completion-storage').textContent=preview?'미리보기 내용은 기록하지 않았어요.':!saved||blocked?'진도를 저장하지 못했어요. 닫기 전에 학습 기록에서 백업해 주세요.':'학습 기록을 이 브라우저에 저장했어요. 다른 기기로 옮기려면 기록을 백업해 주세요.';
@@ -173,6 +177,21 @@
   el('monthly-history').replaceChildren();const checks=state.history.filter(h=>h.day%30===0);if(!checks.length)el('monthly-history').append(text('p','30일 수업을 마칠 때 첫 점검이 열려요. 매달 10가지 상황의 변화를 살펴봅니다.'));for(const h of checks){const block=document.createElement('details');block.append(text('summary',`${h.day/30}개월차 · 혼자 소통 ${h.monthly.filter(v=>v==='solo').length} / 10상황`));course.monthly.forEach((q,i)=>block.append(text('p',`${q.title}: ${choiceLabels[h.monthly[i]]}`)));block.append(text('p','자기 점검 기록입니다. 자동 평가나 실력 인증이 아니에요.','hint'));el('monthly-history').append(block);}
   el('course-plan').replaceChildren();course.modules.forEach((m,i)=>{const details=document.createElement('details');details.append(text('summary',`${i+1}번째 상황 · ${m.title} (${i*6+1}~${i*6+6}일차)`),text('p',m.goal));for(const day of course.days.slice(i*6,i*6+6)){const button=text('button',`${day.day}일차 · ${course.routines[day.routine].title}${day.day<=state.cursor?' · 완료':''}`,'plan-lesson');button.onclick=()=>start(day.day,true);details.append(button);}el('course-plan').append(details);});
  }
+ window.coachActivities = {
+  context(){if(!lesson||!working)return null;const module=course.modules[lesson.module];return {day:lesson.day,position:working.position,current:working.position<6?current():null,module,dialogue:module.exchanges,words:wordsForDay(lesson.day),preview,activities:working.activities||null};},
+  stats(){return {completed:state.cursor,days:state.history.map(h=>h.date)};},
+  record(kind,value){
+   if(preview||working!==state.active)return false;
+   if(!working.activities)working.activities={shadowing:[],roleplay:false,wordGame:null};
+   const a=working.activities;
+   if(kind==='shadowing'&&working.position<6){const id=current().id;if(!a.shadowing.includes(id))a.shadowing.push(id);}
+   else if(kind==='roleplay')a.roleplay=true;
+   else if(kind==='wordGame'&&Number.isInteger(value)&&value>=0&&value<=5)a.wordGame=value;
+   else return false;
+   const saved=save();window.dispatchEvent(new CustomEvent('coach-progress'));return saved;
+  },
+  stopAudio(){stopMic();stopSpeech();}
+ };
  window.startCourse=()=>{preview=false;start();};
  el('start').onclick=window.startCourse;el('course-menu').onclick=window.startCourse;
  el('history-menu').onclick=openHistory;el('daily-home-button').onclick=()=>{preview=false;show('home');updateHome();};el('extra-practice').onclick=()=>{preview=false;begin();};
