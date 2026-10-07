@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 const storageKey = 'my-english-coach.reviews.v1';
 let topic = '일상생활', index = 0, currentAnswer = '', records = [], storageReadable = true;
 try { const value = JSON.parse(localStorage.getItem(storageKey) || '[]'); if (!Array.isArray(value)) throw new Error(); records = value.filter(r => r && typeof r.id === 'string' && ['topic','question','answer','suggestion','explanation'].every(k => typeof r[k] === 'string')); } catch { storageReadable = false; }
-function show(page) { stopSpeech(); for (const id of ['home','practice','review','daily-complete']) $(id).hidden = id !== page; window.scrollTo({top:0}); }
+function show(page) { stopSpeech(); for (const id of ['home','practice','review','daily-complete','course','history']) $(id).hidden = id !== page; window.scrollTo({top:0}); }
 function question() { return lessons[topic][index]; }
 function renderQuestion() { stopSpeech(); const q = question(); $('beginner-help').open = false; $('starter-example').textContent = q[2]; $('starter-meaning').textContent = meanings[q[2]] || q[4]; $('topic-label').textContent = topic + ' · 초급'; $('question').textContent = q[0]; $('translation').textContent = q[1]; $('progress').textContent = `${index + 1} / ${lessons[topic].length} 질문`; $('answer').value = ''; currentAnswer = ''; $('feedback').hidden = true; for (const b of $('categories').children) b.setAttribute('aria-pressed', String(b.textContent === topic)); }
 function begin() { dailyMode = false; $('daily-guide').hidden = true; $('categories').hidden = false; $('next').hidden = false; show('practice'); renderQuestion(); }
@@ -53,71 +53,7 @@ $('speak-answer').onclick = () => {
 };
 $('stop-recording').onclick = () => { if (recognition) recognition.stop(); };
 
-// Six expressions per day; increasing recall and conversation tasks over 180 days.
-const dailyKey = 'my-english-coach.daily.v2';
-const courseKey = 'my-english-coach.course.v1';
-const stepIds = ['step-listen','step-repeat','step-recall','step-apply'];
-const allItems = Object.entries(lessons).flatMap(([topic, entries]) => entries.map((q,index) => ({topic,index,id:`${topic}:${index}`})));
-const phases = [
- ['1개월 · 소리에 익숙해지기','예문의 단어 하나를 내 상황에 맞게 바꿔 3번 말해 봤어요.'],
- ['2개월 · 내 이야기 말하기','예문을 내 이야기로 바꾸고, 질문에 보지 않고 답해 봤어요.'],
- ['3개월 · 묻고 답하기','질문과 내 답변을 번갈아 말해 2차례 주고받는 연습을 했어요.'],
- ['4개월 · 대화 이어가기','질문에 답한 뒤 관련 문장 하나를 더 붙여 말해 봤어요.'],
- ['5개월 · 상황 속에서 말하기','그 상황을 상상해 질문과 답변을 연결하고, 다시 말해 달라는 표현도 써 봤어요.'],
- ['6개월 · 도움 없이 소통하기','예문을 가리고 30초 동안 상황에 맞게 말해 본 뒤 막힌 표현을 다시 연습했어요.']
-];
-let dailyMode = false, dailyState, dailyPlan, dailyCanSave = true, dailyWarning = '', courseStart = null, courseDay = 0;
-function localDate() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-function refreshDaily() {
- const date = localDate(); if (dailyState && dailyState.date === date) return; dailyWarning = ''; dailyCanSave = true;
- try { courseStart = localStorage.getItem(courseKey); if (courseStart && !/^\d{4}-\d{2}-\d{2}$/.test(courseStart)) throw new Error(); }
- catch { courseStart = null; dailyCanSave = false; dailyWarning = '브라우저 저장 공간을 사용할 수 없어요. 지금 연습은 가능하지만 진도가 유지되지 않을 수 있어요.'; }
- courseDay = courseStart ? Math.max(0, Math.floor((Date.parse(date+'T00:00:00Z')-Date.parse(courseStart+'T00:00:00Z'))/86400000)) : 0;
- // Repetition is intentional: 60 authored expressions recur with harder speaking tasks.
- const focusStart = (courseDay * 4) % allItems.length;
- dailyPlan = [0,1,2,3].map(i => ({...allItems[(focusStart+i)%allItems.length],role:'오늘의 핵심 표현'}));
- const reviewStart = courseDay ? ((courseDay-1)*4)%allItems.length : 4;
- dailyPlan.push(...[0,1].map(i => ({...allItems[(reviewStart+i)%allItems.length],role:courseDay ? '이전 표현 복습' : '첫날 추가 기초 연습'})));
- dailyState = {date,completed:[]};
- try { const raw = localStorage.getItem(dailyKey); if (raw) { const parsed = JSON.parse(raw); if (!parsed || typeof parsed.date !== 'string' || !Array.isArray(parsed.completed) || !parsed.completed.every(id => typeof id === 'string')) throw new Error(); if (parsed.date === date) dailyState.completed = [...new Set(parsed.completed)].filter(id => dailyPlan.some(item => item.id === id)); } }
- catch { dailyCanSave = false; dailyWarning = '오늘의 진도를 읽을 수 없어요. 연습은 가능하지만 저장 기록은 덮어쓰지 않습니다.'; }
-}
-function updateDailyHome() {
- $('daily-home').textContent = dailyState.completed.length === 6 ? '오늘 공부 완료! 오늘은 쉬어도 좋아요.' : `오늘의 공부 · ${dailyState.completed.length} / 6표현 완료 · 약 35분`;
- $('start').firstChild.textContent = dailyState.completed.length === 6 ? '오늘 완료한 공부 보기 ' : dailyState.completed.length ? '오늘 공부 이어하기 ' : '오늘의 영어회화 시작하기 ';
-}
-function startDaily() {
- refreshDaily();
- if (!courseStart) { courseStart = localDate(); try { if (!dailyCanSave) throw new Error(); localStorage.setItem(courseKey,courseStart); } catch { dailyWarning = '시작일을 저장하지 못했어요. 다시 열면 학습 단계가 유지되지 않을 수 있어요.'; } }
- updateDailyHome(); dailyMode = true;
- if (dailyState.completed.length === 6) { showDailyComplete(); return; }
- const item = dailyPlan.find(item => !dailyState.completed.includes(item.id)); topic = item.topic; index = item.index;
- $('daily-guide').hidden = false; $('categories').hidden = true; $('next').hidden = true;
- show('practice'); renderQuestion(); $('beginner-help').open = true;
- $('daily-progress').textContent = `오늘의 ${dailyState.completed.length+1}번째 표현 · ${dailyState.completed.length} / 6표현 완료 · ${topic}`;
- const phase = phases[Math.min(5,Math.floor(courseDay/30))];
- $('course-phase').textContent = `${Math.min(courseDay+1,180)} / 180일 · ${phase[0]}`;
- $('daily-role').textContent = item.role;
- $('apply-task').textContent = phase[1]; $('daily-storage').textContent = dailyWarning;
- for (const id of stepIds) $(id).checked = false;
- $('daily-finish').disabled = true; $('daily-finish').textContent = dailyState.completed.length === 5 ? '오늘 공부 마치기' : '이 표현 완료 · 다음 표현으로';
-}
-for (const id of stepIds) $(id).onchange = () => { $('daily-finish').disabled = !stepIds.every(id => $(id).checked); };
-$('daily-finish').onclick = () => {
- if (!dailyMode || !stepIds.every(id => $(id).checked)) return;
- if (dailyState.date !== localDate()) { dailyState = null; startDaily(); $('daily-storage').textContent = '날짜가 바뀌어 새 하루의 연습을 시작합니다.'; return; }
- const id = `${topic}:${index}`; if (!dailyState.completed.includes(id)) dailyState.completed.push(id);
- try { if (!dailyCanSave) throw new Error(); localStorage.setItem(dailyKey, JSON.stringify(dailyState)); }
- catch { dailyWarning = '연습은 마쳤지만 진도를 저장하지 못했어요. 다시 열면 완료 표시가 유지되지 않을 수 있어요.'; }
- updateDailyHome(); if (dailyState.completed.length === 6) showDailyComplete(); else { const warning = dailyWarning; startDaily(); if (warning) {dailyWarning = warning; $('daily-storage').textContent = warning;} }
-};
-function showDailyComplete() {
- show('daily-complete'); $('completed-sentences').replaceChildren();
- for (const item of dailyPlan) { const q = lessons[item.topic][item.index]; $('completed-sentences').append(textElement('p',q[2]),textElement('p',meanings[q[2]])); }
- $('completion-storage').textContent = dailyWarning || '오늘의 완료 기록을 이 브라우저에 저장했어요. 내일 다시 만나요. 완료 표시는 연습 분량을 마쳤다는 뜻이며 실력 인증은 아니에요.';
- $('complete-title').focus();
-}
-$('daily-home-button').onclick = () => { show('home'); updateDailyHome(); };
-$('extra-practice').onclick = begin;
-window.addEventListener('focus', () => { if (dailyState.date !== localDate()) { dailyState = null; refreshDaily(); updateDailyHome(); if (dailyMode) startDaily(); } });
-refreshDaily(); updateDailyHome(); renderQuestion();
+// The guided 180-day course is implemented in course-app.js. Free practice remains available.
+let dailyMode = false;
+function startDaily() { window.startCourse(); }
+renderQuestion();
