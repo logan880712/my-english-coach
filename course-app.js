@@ -61,9 +61,11 @@
   if(working.vocabCount!==10){working.vocabDone=false;working.vocabCount=10;}
   if(lesson.day%7===0&&!working.weekly)working.weekly={answers:Array(8).fill(null),notes:Array(3).fill(''),submitted:false,bankVersion:2};
   show('course');renderVocabulary();el('course-preview').hidden=!preview;
-  el('course-title').textContent=`${lesson.day}일차 · ${course.modules[lesson.module].title}`;
+  el('course-title').textContent=`${lesson.day}일차 · ${lesson.title}`;
   el('course-stage').textContent=`${Math.floor((lesson.day-1)/30)+1}개월차 / 6개월 · ${Math.floor((lesson.day-1)/6)+1}번째 상황`;
-  el('course-routine').textContent=course.routines[lesson.routine].title;
+  el('course-routine').textContent=`${lesson.routine+1} / 6단계 · ${course.routines[lesson.routine].title}`;
+  const nextTopic=course.days[lesson.day+5-lesson.routine];
+  el('course-repetition').textContent=`한 주제를 6개 수업으로 익혀요. 문장이 겹쳐도 오늘의 말하기 과제는 달라집니다. ${nextTopic?`${nextTopic.day}일차부터 새 주제 ‘${course.modules[nextTopic.module].title}’를 공부해요.`:'이번 주제가 마지막입니다. 마친 뒤에는 학습 기록에서 다시 연습할 수 있어요.'}`;
   el('course-goal').textContent=course.modules[lesson.module].goal;
   el('course-instruction').textContent=course.routines[lesson.routine].goal;
   const difficult=findDifficult();el('spaced-review').hidden=!difficult;
