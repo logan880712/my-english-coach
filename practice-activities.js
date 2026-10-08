@@ -14,7 +14,7 @@
  }
  function showStatus(value){if(el('activity-status').textContent!==value)el('activity-status').textContent=value;}
  function openActivity(next){
-  const value=bridge.context();if(!value||!value.current)return;
+  const value=bridge.context();if(!value||(!value.current&&next!=='role'))return;
   bridge.stopAudio();stopAudio();mode=next;context=value;el('activity-body').replaceChildren();showStatus('');
   if(!dialog.open)dialog.showModal();
  }
@@ -95,6 +95,7 @@
   for(const value of options){const b=button(value,()=>{if(value!==w.meaning){wordMissed=true;b.disabled=true;showStatus('괜찮아요. 한 번 더 생각해 보고 골라 보세요.');return;}if(!wordMissed)wordScore++;for(const n of choices.children)n.disabled=true;showStatus(`맞아요! ${w.word}는 “${w.meaning}”예요. 소리 내어 한 번 말해 보세요.`);body.append(button(wordIndex===context.words.length-1?'단어 게임 결과 보기':'다음 단어',()=>{if(wordIndex===context.words.length-1){const saved=bridge.record('wordGame',wordScore);body.replaceChildren(celebration(`${wordScore} / ${context.words.length}개를 첫 시도에 기억했어요!`,'틀렸던 단어도 다시 맞혀 봤어요. 게임 점수는 단어 뜻 기억 결과이며 회화 실력 점수가 아닙니다.'),button('한 번 더 연습하기',()=>{wordIndex=0;wordScore=0;renderWordGame();}),button('오늘 수업으로 돌아가기',closeActivity));showStatus(context.preview?'미리보기 게임은 실제 기록을 바꾸지 않아요.':saved?'오늘의 단어 게임 결과를 기록했어요.':'기록이 저장되지 않았다면 학습 기록에서 백업해 주세요.');}else{wordIndex++;renderWordGame();}}));},'secondary');choices.append(b);}body.append(choices);showStatus('시간 제한은 없어요. 천천히 뜻을 떠올려 보세요.');
  }
  el('word-game-start').onclick=()=>{openActivity('word');wordIndex=0;wordScore=0;el('activity-kicker').textContent='오늘 배운 단어를 한 번 더';el('activity-title').textContent='단어 기억 게임';el('activity-description').textContent='듣고, 뜻을 떠올리고, 소리 내어 말하세요. 틀려도 다시 골라 볼 수 있어요.';renderWordGame();};
+ el('final-dialogue-start').onclick=()=>el('roleplay-start').click();
  window.addEventListener('coach-progress',passport);
  window.addEventListener('coach-view-change',e=>{closeActivity();if(e.detail.page!=='course')exitFocus();});
  window.addEventListener('coach-lesson-change',()=>{closeActivity();if(bridge.context()?.position===6)exitFocus();passport();});

@@ -1,0 +1,42 @@
+[
+  {
+    "day": 7,
+    "bankVersion": 1,
+    "hash": "2698a6ced047eb7c644af30f3e3eb228b73f45bbe2ea8d5096ba235762779318"
+  },
+  {
+    "day": 7,
+    "bankVersion": 2,
+    "hash": "2698a6ced047eb7c644af30f3e3eb228b73f45bbe2ea8d5096ba235762779318"
+  },
+  {
+    "day": 14,
+    "bankVersion": 1,
+    "hash": "97e8507cb103037e3a64c546d5e62443c8ae70bea24801350b741c9540141275"
+  },
+  {
+    "day": 14,
+    "bankVersion": 2,
+    "hash": "97e8507cb103037e3a64c546d5e62443c8ae70bea24801350b741c9540141275"
+  },
+  {
+    "day": 70,
+    "bankVersion": 1,
+    "hash": "016996ef0e8466a406cf18827947b3d84cef6621696610b019367c740c48da30"
+  },
+  {
+    "day": 70,
+    "bankVersion": 2,
+    "hash": "f2d000ac69e0d2143a12c829df2a2df02c5cde0ce7025cbad58401a4206f4cc4"
+  },
+  {
+    "day": 175,
+    "bankVersion": 1,
+    "hash": "925cbed9ea74f2c1909186b7f2e57e98e1d7c8db604321c1434cb162c31ca1e1"
+  },
+  {
+    "day": 175,
+    "bankVersion": 2,
+    "hash": "925cbed9ea74f2c1909186b7f2e57e98e1d7c8db604321c1434cb162c31ca1e1"
+  }
+]
