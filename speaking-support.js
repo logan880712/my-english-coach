@@ -1384,20 +1384,990 @@ Object.assign(pronunciationWords, {weekends:'위켄즈',yesterday:'예스터데�
 function wordsForDay(day) {
  const d=sixMonthCourse.days[day-1],source=dailyWordSets[d.module];
  // Revisit vocabulary across the six lesson types, including the previous situation on review day.
- let result=Array.from({length:5},(_,i)=>source[(d.routine+i)%source.length]);
- if(d.routine===4&&d.module>0) result=[...source.slice(0,3),...dailyWordSets[d.module-1].filter(w=>!source.slice(0,3).some(x=>x.word.toLowerCase()===w.word.toLowerCase())).slice(0,2)];
+ let result=Array.from({length:10},(_,i)=>source[(d.routine+i)%source.length]);
+ if(d.routine===4&&d.module>0) result=[...source.slice(0,6),...dailyWordSets[d.module-1].filter(w=>!source.slice(0,6).some(x=>x.word.toLowerCase()===w.word.toLowerCase())).slice(0,4)];
  return result;
 }
-function weeklyQuestions(day) {
+function weeklyQuestions(day,legacy=false) {
  const pool=[],sentences=[];
  for(let n=Math.max(1,day-6);n<=day;n++) {
-  for(const word of wordsForDay(n))if(!pool.some(w=>w.word.toLowerCase()===word.word.toLowerCase()))pool.push(word);
+  for(const word of (legacy?legacyWordsForDay(n):wordsForDay(n)))if(!pool.some(w=>w.word.toLowerCase()===word.word.toLowerCase()))pool.push(word);
   for(const item of sixMonthCourse.days[n-1].entries){const q=sixMonthCourse.modules[item.module].exchanges[item.index];if(!sentences.some(x=>x.answer===q.answer||x.answerKo===q.answerKo))sentences.push(q);}
  }
  const rotate=(options,n)=>[...options.slice(n%3),...options.slice(0,n%3)];
- const result=pool.slice(0,5).map((w,i)=>({kind:'word',prompt:w.word,sound:hangulSound(w.word),meaning:w.meaning,options:rotate([w.meaning,...pool.filter(x=>x.meaning!==w.meaning).map(x=>x.meaning).filter((x,j,a)=>a.indexOf(x)===j).slice(0,2)],day+i),correct:w.meaning}));
+ const result=pool.slice(0,5).map((w,i)=>({kind:'word',prompt:w.word,sound:w.pronunciation,meaning:w.meaning,options:rotate([w.meaning,...pool.filter(x=>x.meaning!==w.meaning).map(x=>x.meaning).filter((x,j,a)=>a.indexOf(x)===j).slice(0,2)],day+i),correct:w.meaning}));
  for(let i=0;i<3;i++){const target=sentences[(day+i*2)%sentences.length];const alternatives=sentences.filter(q=>q.answer!==target.answer&&q.answerKo!==target.answerKo).slice(0,2);result.push({kind:'sentence',prompt:target.answerKo,sound:hangulSound(target.answer),meaning:target.answerKo,options:rotate([target.answer,...alternatives.map(q=>q.answer)],day+i),correct:target.answer});}
  return result;
 }
 // Teach the useful phrase together instead of the less useful isolated noun.
 dailyWordSets[13][1] = {word:'air conditioner',meaning:'에어컨',pronunciation:'에어 컨디셔너'};
+
+const extraConversationWords = [
+  [
+    {
+      "word": "Hi there.",
+      "meaning": "안녕하세요",
+      "pronunciation": "하이 데어"
+    },
+    {
+      "word": "Nice to meet you.",
+      "meaning": "만나서 반가워요",
+      "pronunciation": "나이스 투 밋 유"
+    },
+    {
+      "word": "What about you?",
+      "meaning": "그쪽은요?",
+      "pronunciation": "왓 어바웃 유"
+    },
+    {
+      "word": "See you.",
+      "meaning": "또 봐요",
+      "pronunciation": "씨 유"
+    },
+    {
+      "word": "first name",
+      "meaning": "이름",
+      "pronunciation": "퍼스트 네임"
+    },
+    {
+      "word": "hometown",
+      "meaning": "고향",
+      "pronunciation": "홈타운"
+    }
+  ],
+  [
+    {
+      "word": "get up",
+      "meaning": "일어나다",
+      "pronunciation": "겟 업"
+    },
+    {
+      "word": "get ready",
+      "meaning": "준비하다",
+      "pronunciation": "겟 레디"
+    },
+    {
+      "word": "head out",
+      "meaning": "밖으로 나가다",
+      "pronunciation": "헤드 아웃"
+    },
+    {
+      "word": "on my way",
+      "meaning": "가는 중이에요",
+      "pronunciation": "온 마이 웨이"
+    },
+    {
+      "word": "take a break",
+      "meaning": "잠깐 쉬다",
+      "pronunciation": "테이크 어 브레이크"
+    },
+    {
+      "word": "go to bed",
+      "meaning": "잠자리에 들다",
+      "pronunciation": "고우 투 베드"
+    }
+  ],
+  [
+    {
+      "word": "I'm into music.",
+      "meaning": "음악에 관심이 많아요",
+      "pronunciation": "아임 인투 뮤직"
+    },
+    {
+      "word": "Sounds good.",
+      "meaning": "좋아요",
+      "pronunciation": "사운즈 굿"
+    },
+    {
+      "word": "Not really.",
+      "meaning": "별로요",
+      "pronunciation": "낫 리얼리"
+    },
+    {
+      "word": "Me too.",
+      "meaning": "저도요",
+      "pronunciation": "미 투"
+    },
+    {
+      "word": "hang out",
+      "meaning": "편하게 어울리다",
+      "pronunciation": "행 아웃"
+    },
+    {
+      "word": "favorite food",
+      "meaning": "가장 좋아하는 음식",
+      "pronunciation": "페이버릿 푸드"
+    }
+  ],
+  [
+    {
+      "word": "parents",
+      "meaning": "부모님",
+      "pronunciation": "페어런츠"
+    },
+    {
+      "word": "live nearby",
+      "meaning": "근처에 살다",
+      "pronunciation": "리브 니어바이"
+    },
+    {
+      "word": "move in",
+      "meaning": "이사 들어오다",
+      "pronunciation": "무브 인"
+    },
+    {
+      "word": "live alone",
+      "meaning": "혼자 살다",
+      "pronunciation": "리브 얼로운"
+    },
+    {
+      "word": "at home",
+      "meaning": "집에",
+      "pronunciation": "앳 홈"
+    },
+    {
+      "word": "make yourself at home",
+      "meaning": "편하게 계세요",
+      "pronunciation": "메이크 유어셀프 앳 홈"
+    }
+  ],
+  [
+    {
+      "word": "Sorry?",
+      "meaning": "다시 말씀해 주시겠어요?",
+      "pronunciation": "쏘리"
+    },
+    {
+      "word": "Say that again, please.",
+      "meaning": "다시 말해 주세요",
+      "pronunciation": "세이 댓 어겐 플리즈"
+    },
+    {
+      "word": "A little slower, please.",
+      "meaning": "조금 더 천천히요",
+      "pronunciation": "어 리틀 슬로워 플리즈"
+    },
+    {
+      "word": "Got it.",
+      "meaning": "이해했어요",
+      "pronunciation": "갓 잇"
+    },
+    {
+      "word": "I'm not sure.",
+      "meaning": "잘 모르겠어요",
+      "pronunciation": "아임 낫 슈어"
+    },
+    {
+      "word": "One more time.",
+      "meaning": "한 번 더요",
+      "pronunciation": "원 모어 타임"
+    }
+  ],
+  [
+    {
+      "word": "to go",
+      "meaning": "포장해서",
+      "pronunciation": "투 고우"
+    },
+    {
+      "word": "for here",
+      "meaning": "매장에서 먹을",
+      "pronunciation": "포 히어"
+    },
+    {
+      "word": "decaf",
+      "meaning": "디카페인",
+      "pronunciation": "디캐프"
+    },
+    {
+      "word": "less ice",
+      "meaning": "얼음 적게",
+      "pronunciation": "레스 아이스"
+    },
+    {
+      "word": "That's all.",
+      "meaning": "그게 전부예요",
+      "pronunciation": "댓츠 올"
+    },
+    {
+      "word": "Can I get a latte?",
+      "meaning": "라테 한 잔 주세요",
+      "pronunciation": "캔 아이 겟 어 라테"
+    }
+  ],
+  [
+    {
+      "word": "a table for two",
+      "meaning": "두 명 자리",
+      "pronunciation": "어 테이블 포 투"
+    },
+    {
+      "word": "order",
+      "meaning": "주문하다",
+      "pronunciation": "오더"
+    },
+    {
+      "word": "anything else",
+      "meaning": "추가로 필요한 것",
+      "pronunciation": "애니씽 엘스"
+    },
+    {
+      "word": "refill",
+      "meaning": "다시 채워 주기",
+      "pronunciation": "리필"
+    },
+    {
+      "word": "tap water",
+      "meaning": "수돗물·일반 식수",
+      "pronunciation": "탭 워터"
+    },
+    {
+      "word": "the bill, please",
+      "meaning": "계산서 주세요",
+      "pronunciation": "더 빌 플리즈"
+    }
+  ],
+  [
+    {
+      "word": "Does it have nuts?",
+      "meaning": "견과류가 들어 있나요?",
+      "pronunciation": "더즈 잇 해브 넛츠"
+    },
+    {
+      "word": "not too spicy",
+      "meaning": "너무 맵지 않게",
+      "pronunciation": "낫 투 스파이시"
+    },
+    {
+      "word": "on the side",
+      "meaning": "따로 담아서",
+      "pronunciation": "온 더 사이드"
+    },
+    {
+      "word": "without onions",
+      "meaning": "양파 빼고",
+      "pronunciation": "위다웃 어니언즈"
+    },
+    {
+      "word": "vegetarian",
+      "meaning": "채식주의자용의",
+      "pronunciation": "베지테리언"
+    },
+    {
+      "word": "What do you recommend?",
+      "meaning": "무엇을 추천하세요?",
+      "pronunciation": "왓 두 유 레커멘드"
+    }
+  ],
+  [
+    {
+      "word": "try it on",
+      "meaning": "입어 보다",
+      "pronunciation": "트라이 잇 온"
+    },
+    {
+      "word": "fitting room",
+      "meaning": "탈의실",
+      "pronunciation": "피팅 룸"
+    },
+    {
+      "word": "Does it fit?",
+      "meaning": "크기가 맞나요?",
+      "pronunciation": "더즈 잇 핏"
+    },
+    {
+      "word": "a bigger size",
+      "meaning": "더 큰 사이즈",
+      "pronunciation": "어 비거 사이즈"
+    },
+    {
+      "word": "I'll take it.",
+      "meaning": "이걸 살게요",
+      "pronunciation": "아일 테이크 잇"
+    },
+    {
+      "word": "just looking",
+      "meaning": "그냥 구경 중",
+      "pronunciation": "저스트 루킹"
+    }
+  ],
+  [
+    {
+      "word": "Where can I find it?",
+      "meaning": "어디에서 찾을 수 있나요?",
+      "pronunciation": "웨어 캔 아이 파인드 잇"
+    },
+    {
+      "word": "checkout",
+      "meaning": "계산대",
+      "pronunciation": "체크아웃"
+    },
+    {
+      "word": "on sale",
+      "meaning": "할인 중인",
+      "pronunciation": "온 세일"
+    },
+    {
+      "word": "a bag, please",
+      "meaning": "봉투 주세요",
+      "pronunciation": "어 백 플리즈"
+    },
+    {
+      "word": "cash",
+      "meaning": "현금",
+      "pronunciation": "캐시"
+    },
+    {
+      "word": "change",
+      "meaning": "거스름돈",
+      "pronunciation": "체인지"
+    }
+  ],
+  [
+    {
+      "word": "turn right",
+      "meaning": "오른쪽으로 돌다",
+      "pronunciation": "턴 라이트"
+    },
+    {
+      "word": "go straight",
+      "meaning": "직진하다",
+      "pronunciation": "고우 스트레이트"
+    },
+    {
+      "word": "across from",
+      "meaning": "맞은편에",
+      "pronunciation": "어크로스 프럼"
+    },
+    {
+      "word": "next to",
+      "meaning": "바로 옆에",
+      "pronunciation": "넥스트 투"
+    },
+    {
+      "word": "Is it far?",
+      "meaning": "먼가요?",
+      "pronunciation": "이즈 잇 파"
+    },
+    {
+      "word": "I'm lost.",
+      "meaning": "길을 잃었어요",
+      "pronunciation": "아임 로스트"
+    }
+  ],
+  [
+    {
+      "word": "one-way",
+      "meaning": "편도",
+      "pronunciation": "원 웨이"
+    },
+    {
+      "word": "round-trip",
+      "meaning": "왕복",
+      "pronunciation": "라운드 트립"
+    },
+    {
+      "word": "get on",
+      "meaning": "타다",
+      "pronunciation": "겟 온"
+    },
+    {
+      "word": "get off",
+      "meaning": "내리다",
+      "pronunciation": "겟 오프"
+    },
+    {
+      "word": "Which stop?",
+      "meaning": "어느 정류장이에요?",
+      "pronunciation": "위치 스탑"
+    },
+    {
+      "word": "Does this go to the airport?",
+      "meaning": "이것이 공항으로 가나요?",
+      "pronunciation": "더즈 디스 고우 투 디 에어포트"
+    }
+  ],
+  [
+    {
+      "word": "check in",
+      "meaning": "체크인하다",
+      "pronunciation": "체크 인"
+    },
+    {
+      "word": "included",
+      "meaning": "포함된",
+      "pronunciation": "인클루디드"
+    },
+    {
+      "word": "room key",
+      "meaning": "객실 열쇠",
+      "pronunciation": "룸 키"
+    },
+    {
+      "word": "front desk",
+      "meaning": "프런트 데스크",
+      "pronunciation": "프런트 데스크"
+    },
+    {
+      "word": "check out",
+      "meaning": "체크아웃하다",
+      "pronunciation": "체크 아웃"
+    },
+    {
+      "word": "under my name",
+      "meaning": "제 이름으로",
+      "pronunciation": "언더 마이 네임"
+    }
+  ],
+  [
+    {
+      "word": "extra towel",
+      "meaning": "추가 수건",
+      "pronunciation": "엑스트라 타월"
+    },
+    {
+      "word": "Wi-Fi password",
+      "meaning": "와이파이 비밀번호",
+      "pronunciation": "와이 파이 패스워드"
+    },
+    {
+      "word": "not working",
+      "meaning": "작동하지 않는",
+      "pronunciation": "낫 워킹"
+    },
+    {
+      "word": "hot water",
+      "meaning": "온수",
+      "pronunciation": "핫 워터"
+    },
+    {
+      "word": "Could you check it?",
+      "meaning": "확인해 주시겠어요?",
+      "pronunciation": "쿠쥬 체크 잇"
+    },
+    {
+      "word": "right away",
+      "meaning": "바로",
+      "pronunciation": "라이트 어웨이"
+    }
+  ],
+  [
+    {
+      "word": "boarding pass",
+      "meaning": "탑승권",
+      "pronunciation": "보딩 패스"
+    },
+    {
+      "word": "gate",
+      "meaning": "탑승구",
+      "pronunciation": "게이트"
+    },
+    {
+      "word": "luggage",
+      "meaning": "짐",
+      "pronunciation": "러기지"
+    },
+    {
+      "word": "return ticket",
+      "meaning": "귀국 표",
+      "pronunciation": "리턴 티킷"
+    },
+    {
+      "word": "on vacation",
+      "meaning": "휴가 중인",
+      "pronunciation": "온 베이케이션"
+    },
+    {
+      "word": "How long?",
+      "meaning": "얼마나 오래요?",
+      "pronunciation": "하우 롱"
+    }
+  ],
+  [
+    {
+      "word": "Are you free?",
+      "meaning": "시간 있어요?",
+      "pronunciation": "아 유 프리"
+    },
+    {
+      "word": "How about two?",
+      "meaning": "2시는 어때요?",
+      "pronunciation": "하우 어바웃 투"
+    },
+    {
+      "word": "Works for me.",
+      "meaning": "저는 괜찮아요",
+      "pronunciation": "웍스 포 미"
+    },
+    {
+      "word": "I'm running late.",
+      "meaning": "조금 늦을 것 같아요",
+      "pronunciation": "아임 러닝 레이트"
+    },
+    {
+      "word": "See you there.",
+      "meaning": "거기서 봐요",
+      "pronunciation": "씨 유 데어"
+    },
+    {
+      "word": "Let me know.",
+      "meaning": "알려 주세요",
+      "pronunciation": "렛 미 노우"
+    }
+  ],
+  [
+    {
+      "word": "Could you help me?",
+      "meaning": "도와주시겠어요?",
+      "pronunciation": "쿠쥬 헬프 미"
+    },
+    {
+      "word": "show me",
+      "meaning": "보여 주다",
+      "pronunciation": "쇼우 미"
+    },
+    {
+      "word": "one more time",
+      "meaning": "한 번 더",
+      "pronunciation": "원 모어 타임"
+    },
+    {
+      "word": "by tomorrow",
+      "meaning": "내일까지",
+      "pronunciation": "바이 투마로우"
+    },
+    {
+      "word": "No problem.",
+      "meaning": "문제없어요",
+      "pronunciation": "노우 프라블럼"
+    },
+    {
+      "word": "I'll handle it.",
+      "meaning": "제가 처리할게요",
+      "pronunciation": "아일 핸들 잇"
+    }
+  ],
+  [
+    {
+      "word": "reschedule",
+      "meaning": "일정을 다시 잡다",
+      "pronunciation": "리스케줄"
+    },
+    {
+      "word": "join",
+      "meaning": "참석하다",
+      "pronunciation": "조인"
+    },
+    {
+      "word": "in person",
+      "meaning": "직접 만나서",
+      "pronunciation": "인 퍼슨"
+    },
+    {
+      "word": "Does that work?",
+      "meaning": "그렇게 해도 괜찮나요?",
+      "pronunciation": "더즈 댓 워크"
+    },
+    {
+      "word": "Let's meet online.",
+      "meaning": "온라인으로 만나요",
+      "pronunciation": "렛츠 밋 온라인"
+    },
+    {
+      "word": "See you tomorrow.",
+      "meaning": "내일 봐요",
+      "pronunciation": "씨 유 투마로우"
+    }
+  ],
+  [
+    {
+      "word": "free time",
+      "meaning": "여가 시간",
+      "pronunciation": "프리 타임"
+    },
+    {
+      "word": "go hiking",
+      "meaning": "등산하다",
+      "pronunciation": "고우 하이킹"
+    },
+    {
+      "word": "once a week",
+      "meaning": "일주일에 한 번",
+      "pronunciation": "원스 어 윅"
+    },
+    {
+      "word": "join us",
+      "meaning": "우리와 함께하다",
+      "pronunciation": "조인 어스"
+    },
+    {
+      "word": "take it easy",
+      "meaning": "느긋하게 지내다",
+      "pronunciation": "테이크 잇 이지"
+    },
+    {
+      "word": "I'd love to.",
+      "meaning": "좋아요·그러고 싶어요",
+      "pronunciation": "아이드 러브 투"
+    }
+  ],
+  [
+    {
+      "word": "How was it?",
+      "meaning": "어땠어요?",
+      "pronunciation": "하우 워즈 잇"
+    },
+    {
+      "word": "had fun",
+      "meaning": "즐겁게 보냈다",
+      "pronunciation": "해드 펀"
+    },
+    {
+      "word": "went out",
+      "meaning": "외출했다",
+      "pronunciation": "웬트 아웃"
+    },
+    {
+      "word": "stayed home",
+      "meaning": "집에 있었다",
+      "pronunciation": "스테이드 홈"
+    },
+    {
+      "word": "last weekend",
+      "meaning": "지난 주말",
+      "pronunciation": "래스트 위켄드"
+    },
+    {
+      "word": "What did you do?",
+      "meaning": "무엇을 했어요?",
+      "pronunciation": "왓 디드 유 두"
+    }
+  ],
+  [
+    {
+      "word": "wrong order",
+      "meaning": "잘못된 주문",
+      "pronunciation": "롱 오더"
+    },
+    {
+      "word": "I ordered soup.",
+      "meaning": "수프를 주문했어요",
+      "pronunciation": "아이 오더드 수프"
+    },
+    {
+      "word": "Could you change it?",
+      "meaning": "바꿔 주시겠어요?",
+      "pronunciation": "쿠쥬 체인지 잇"
+    },
+    {
+      "word": "That's okay.",
+      "meaning": "괜찮아요",
+      "pronunciation": "댓츠 오케이"
+    },
+    {
+      "word": "take it off the bill",
+      "meaning": "계산서에서 빼다",
+      "pronunciation": "테이크 잇 오프 더 빌"
+    },
+    {
+      "word": "too cold",
+      "meaning": "너무 차가운",
+      "pronunciation": "투 콜드"
+    }
+  ],
+  [
+    {
+      "word": "sore throat",
+      "meaning": "목이 아픔",
+      "pronunciation": "소어 쓰로트"
+    },
+    {
+      "word": "stomachache",
+      "meaning": "복통",
+      "pronunciation": "스터먹에이크"
+    },
+    {
+      "word": "pain",
+      "meaning": "통증",
+      "pronunciation": "페인"
+    },
+    {
+      "word": "since yesterday",
+      "meaning": "어제부터",
+      "pronunciation": "신스 예스터데이"
+    },
+    {
+      "word": "How often?",
+      "meaning": "얼마나 자주요?",
+      "pronunciation": "하우 오픈"
+    },
+    {
+      "word": "side effects",
+      "meaning": "부작용",
+      "pronunciation": "사이드 이펙츠"
+    }
+  ],
+  [
+    {
+      "word": "doesn't fit",
+      "meaning": "크기가 맞지 않다",
+      "pronunciation": "더즌트 핏"
+    },
+    {
+      "word": "Can I exchange it?",
+      "meaning": "교환할 수 있나요?",
+      "pronunciation": "캔 아이 익스체인지 잇"
+    },
+    {
+      "word": "a refund, please",
+      "meaning": "환불 부탁해요",
+      "pronunciation": "어 리펀드 플리즈"
+    },
+    {
+      "word": "original card",
+      "meaning": "결제했던 카드",
+      "pronunciation": "어리저널 카드"
+    },
+    {
+      "word": "too tight",
+      "meaning": "너무 꽉 끼는",
+      "pronunciation": "투 타이트"
+    },
+    {
+      "word": "too loose",
+      "meaning": "너무 헐렁한",
+      "pronunciation": "투 루스"
+    }
+  ],
+  [
+    {
+      "word": "lost and found",
+      "meaning": "분실물 센터",
+      "pronunciation": "로스트 앤드 파운드"
+    },
+    {
+      "word": "I left it here.",
+      "meaning": "여기에 두고 갔어요",
+      "pronunciation": "아이 레프트 잇 히어"
+    },
+    {
+      "word": "describe",
+      "meaning": "설명하다",
+      "pronunciation": "디스크라이브"
+    },
+    {
+      "word": "last seen",
+      "meaning": "마지막으로 본",
+      "pronunciation": "래스트 씬"
+    },
+    {
+      "word": "contact me",
+      "meaning": "연락해 주세요",
+      "pronunciation": "칸택트 미"
+    },
+    {
+      "word": "Has anyone found it?",
+      "meaning": "누가 찾았나요?",
+      "pronunciation": "해즈 애니원 파운드 잇"
+    }
+  ],
+  [
+    {
+      "word": "make a booking",
+      "meaning": "예약하다",
+      "pronunciation": "메이크 어 부킹"
+    },
+    {
+      "word": "available",
+      "meaning": "가능한·자리가 있는",
+      "pronunciation": "어베일러블"
+    },
+    {
+      "word": "for two people",
+      "meaning": "두 명으로",
+      "pronunciation": "포 투 피플"
+    },
+    {
+      "word": "Could you spell that?",
+      "meaning": "철자를 말해 주시겠어요?",
+      "pronunciation": "쿠쥬 스펠 댓"
+    },
+    {
+      "word": "confirm my booking",
+      "meaning": "예약을 확인하다",
+      "pronunciation": "컨펌 마이 부킹"
+    },
+    {
+      "word": "cancel",
+      "meaning": "취소하다",
+      "pronunciation": "캔슬"
+    }
+  ],
+  [
+    {
+      "word": "I'd like to visit.",
+      "meaning": "방문하고 싶어요",
+      "pronunciation": "아이드 라이크 투 비짓"
+    },
+    {
+      "word": "nearby",
+      "meaning": "근처의",
+      "pronunciation": "니어바이"
+    },
+    {
+      "word": "get around",
+      "meaning": "이동해 다니다",
+      "pronunciation": "겟 어라운드"
+    },
+    {
+      "word": "local food",
+      "meaning": "현지 음식",
+      "pronunciation": "로컬 푸드"
+    },
+    {
+      "word": "any suggestions",
+      "meaning": "추천할 만한 것",
+      "pronunciation": "애니 서제스천즈"
+    },
+    {
+      "word": "if it rains",
+      "meaning": "비가 오면",
+      "pronunciation": "이프 잇 레인즈"
+    }
+  ],
+  [
+    {
+      "word": "I'd love to, but…",
+      "meaning": "그러고 싶지만…",
+      "pronunciation": "아이드 러브 투 벗"
+    },
+    {
+      "word": "Maybe next time.",
+      "meaning": "다음 기회에요",
+      "pronunciation": "메이비 넥스트 타임"
+    },
+    {
+      "word": "Thanks for inviting me.",
+      "meaning": "초대해 줘서 고마워요",
+      "pronunciation": "쌩크스 포 인바이팅 미"
+    },
+    {
+      "word": "Sounds great.",
+      "meaning": "좋겠어요",
+      "pronunciation": "사운즈 그레이트"
+    },
+    {
+      "word": "I have plans.",
+      "meaning": "약속이 있어요",
+      "pronunciation": "아이 해브 플랜즈"
+    },
+    {
+      "word": "How about Sunday?",
+      "meaning": "일요일은 어때요?",
+      "pronunciation": "하우 어바웃 선데이"
+    }
+  ],
+  [
+    {
+      "word": "I think…",
+      "meaning": "제 생각에는…",
+      "pronunciation": "아이 씽크"
+    },
+    {
+      "word": "I agree.",
+      "meaning": "동의해요",
+      "pronunciation": "아이 어그리"
+    },
+    {
+      "word": "I'm not sure.",
+      "meaning": "잘 모르겠어요",
+      "pronunciation": "아임 낫 슈어"
+    },
+    {
+      "word": "What do you think?",
+      "meaning": "어떻게 생각해요?",
+      "pronunciation": "왓 두 유 씽크"
+    },
+    {
+      "word": "save time",
+      "meaning": "시간을 아끼다",
+      "pronunciation": "세이브 타임"
+    },
+    {
+      "word": "good idea",
+      "meaning": "좋은 생각",
+      "pronunciation": "굿 아이디어"
+    }
+  ],
+  [
+    {
+      "word": "miss the train",
+      "meaning": "기차를 놓치다",
+      "pronunciation": "미스 더 트레인"
+    },
+    {
+      "word": "next available",
+      "meaning": "다음에 가능한",
+      "pronunciation": "넥스트 어베일러블"
+    },
+    {
+      "word": "change my ticket",
+      "meaning": "표를 바꾸다",
+      "pronunciation": "체인지 마이 티킷"
+    },
+    {
+      "word": "How much extra?",
+      "meaning": "추가 비용이 얼마인가요?",
+      "pronunciation": "하우 머치 엑스트라"
+    },
+    {
+      "word": "delayed",
+      "meaning": "지연된",
+      "pronunciation": "딜레이드"
+    },
+    {
+      "word": "Can I take the next one?",
+      "meaning": "다음 것을 탈 수 있나요?",
+      "pronunciation": "캔 아이 테이크 더 넥스트 원"
+    }
+  ],
+  [
+    {
+      "word": "to be honest",
+      "meaning": "솔직히 말하면",
+      "pronunciation": "투 비 아너스트"
+    },
+    {
+      "word": "What about you?",
+      "meaning": "그쪽은요?",
+      "pronunciation": "왓 어바웃 유"
+    },
+    {
+      "word": "I mean…",
+      "meaning": "제 말은…",
+      "pronunciation": "아이 민"
+    },
+    {
+      "word": "let me think",
+      "meaning": "생각해 볼게요",
+      "pronunciation": "렛 미 씽크"
+    },
+    {
+      "word": "by the way",
+      "meaning": "그런데",
+      "pronunciation": "바이 더 웨이"
+    },
+    {
+      "word": "Could you explain?",
+      "meaning": "설명해 주시겠어요?",
+      "pronunciation": "쿠쥬 익스플레인"
+    }
+  ]
+];
+function legacyWordsForDay(day){
+ const d=sixMonthCourse.days[day-1],source=dailyWordSets[d.module].slice(0,6);
+ let result=Array.from({length:5},(_,i)=>source[(d.routine+i)%source.length]);
+ if(d.routine===4&&d.module>0)result=[...source.slice(0,3),...dailyWordSets[d.module-1].slice(0,6).filter(w=>!source.slice(0,3).some(x=>x.word.toLowerCase()===w.word.toLowerCase())).slice(0,2)];
+ return result;
+}
+extraConversationWords.forEach((words,i)=>dailyWordSets[i].push(...words));
